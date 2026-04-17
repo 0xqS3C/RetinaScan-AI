@@ -3,189 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RetinaScan AI | Clinical Diagnostic Tool</title>
+    <title>RetinaScan AI | Precision Diagnostics</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --healthy: #10b981;
-            --warning: #ef4444;
-            --bg-main: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --healthy: #00e676;
+            --warning: #ff1744;
+            --glass: rgba(255, 255, 255, 0.7);
+            --bg: #0f172a; /* Deep Space Blue */
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: #f8fafc;
             margin: 0;
-            line-height: 1.6;
+            min-height: 100vh;
         }
 
-        /* --- Modern Navigation --- */
+        /* --- Header --- */
         nav {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 5%;
+            padding: 2rem 5%;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            justify-content: center;
         }
 
-        .logo {
+        .brand {
             font-weight: 800;
-            font-size: 1.25rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
         }
 
-        /* --- Layout --- */
-        .container {
-            max-width: 800px;
-            margin: 60px auto;
-            padding: 0 20px;
+        /* --- Main Layout --- */
+        .app-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        header { text-align: center; margin-bottom: 40px; }
-        h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -1px; }
-        .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+        }
 
-        /* --- Upload Component --- */
+        /* --- Custom File Upload --- */
         #upload-zone {
-            border: 2px dashed var(--border);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 24px;
-            padding: 60px 20px;
+            padding: 50px 20px;
             text-align: center;
-            background: var(--card-bg);
-            transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
         }
 
         #upload-zone:hover {
-            border-color: var(--primary);
-            background: #f0f7ff;
-            transform: translateY(-2px);
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.05);
         }
 
-        #upload-zone.has-image { padding: 20px; border-style: solid; }
-        #preview-img { max-width: 100%; max-height: 350px; border-radius: 16px; margin-top: 10px; }
+        #preview-img {
+            max-width: 100%;
+            border-radius: 16px;
+            margin-top: 10px;
+            display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
 
-        /* --- Buttons --- */
-        .btn-group { text-align: center; margin-top: 30px; }
-        .btn-primary {
-            background: var(--primary);
+        /* --- Futuristic Button --- */
+        .btn-scan {
+            width: 100%;
+            background: var(--accent);
             color: white;
             border: none;
-            padding: 16px 40px;
-            border-radius: 14px;
+            padding: 18px;
+            border-radius: 18px;
+            font-weight: 700;
             font-size: 1.1rem;
-            font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+            margin-top: 30px;
+            box-shadow: 0 10px 20px var(--accent-glow);
+            transition: 0.3s;
         }
 
-        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
-        .btn-primary:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+        .btn-scan:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px var(--accent-glow);
+        }
 
-        /* --- Result Card --- */
-        .result-card {
+        .btn-scan:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        /* --- Result Section --- */
+        .result-panel {
             margin-top: 40px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            display: none; /* Controlled by JS */
+            display: none;
+            animation: fadeIn 0.6s ease-out forwards;
         }
 
-        .result-status-bar { height: 10px; width: 100%; }
-        .healthy-bg { background: var(--healthy); }
-        .dr-bg { background: var(--warning); }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
 
-        .result-content { padding: 40px; text-align: center; }
-        .result-label { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
-        .healthy-text { color: var(--healthy); }
-        .dr-text { color: var(--warning); }
+        .healthy-theme { color: var(--healthy); border: 1px solid var(--healthy); background: rgba(0, 230, 118, 0.1); }
+        .dr-theme { color: var(--warning); border: 1px solid var(--warning); background: rgba(255, 23, 68, 0.1); }
 
-        /* --- Confidence Bar --- */
-        .conf-container { background: #f1f5f9; height: 12px; border-radius: 6px; margin: 25px 0; overflow: hidden; }
-        .conf-fill { height: 100%; width: 0%; transition: width 1s ease-out; }
+        .big-text { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
 
-        /* --- Debug Panel --- */
-        #debug-panel {
-            background: #0f172a;
-            border-radius: 16px;
+        /* --- Telemetry Dashboard --- */
+        .telemetry {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 20px;
             padding: 20px;
             margin-top: 30px;
-            text-align: left;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
         }
-        .debug-title { color: #94a3b8; margin-bottom: 12px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
-        .debug-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e293b; color: #38bdf8; }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .data-label { color: #94a3b8; }
+        .data-val { color: var(--accent); font-weight: 700; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z"/><path d="M12 16v-4M12 8h.01"/></svg>
-        RetinaScan AI
-    </div>
-</nav>
+<nav><div class="brand">RetinaScan // Diagnostics</div></nav>
 
-<div class="container">
-    <header>
-        <h1>Retinal Screening</h1>
-        <p class="subtitle">High-precision automated screening for Diabetic Retinopathy</p>
-    </header>
+<div class="app-container">
+    <div class="glass-card">
+        <h2 style="margin-top: 0; font-weight: 600;">Neural Analysis</h2>
+        <p style="color: #94a3b8; margin-bottom: 30px;">Initialize screening by uploading a high-resolution fundus scan.</p>
 
-    <div id="upload-zone">
-        <div id="drop-text">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-bottom:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            <p style="font-weight:600; margin:0;">Upload Retinal Fundus Image</p>
-            <p style="color:var(--text-muted); font-size:0.9rem;">Tap to browse files</p>
+        <div id="upload-zone">
+            <div id="drop-msg">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 15V3m0 0l-4 4m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+                <p style="font-weight: 600; margin-top: 15px;">Drop Image Here</p>
+                <span style="font-size: 0.8rem; opacity: 0.6;">JPG, PNG or TIFF</span>
+            </div>
+            <img id="preview-img">
+            <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleFileSelect(event)">
         </div>
-        <img id="preview-img" class="hidden">
-        <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleFileSelect(event)">
-    </div>
 
-    <div class="btn-group">
-        <button id="analyze-btn" class="btn-primary" onclick="analyzeImage()" disabled>Initializing AI...</button>
-    </div>
+        <button id="scan-btn" class="btn-scan" onclick="runAnalysis()" disabled>WAITING FOR SYSTEM...</button>
 
-    <div id="result-card" class="result-card">
-        <div id="status-bar" class="result-status-bar"></div>
-        <div class="result-content">
-            <div id="result-label" class="result-label">Result</div>
-            <div id="result-sub" style="color: var(--text-muted);">Details</div>
+        <div id="result-panel" class="result-panel">
+            <div id="status-badge" class="status-badge">Processing...</div>
+            <h1 id="main-result" class="big-text">Result</h1>
+            <p id="result-desc" style="color: #94a3b8;"></p>
             
-            <div class="conf-container">
-                <div id="conf-bar" class="conf-fill"></div>
+            <div class="telemetry">
+                <div style="font-size: 0.7rem; color: var(--accent); margin-bottom: 10px;">CORE TELEMETRY</div>
+                <div id="telemetry-content"></div>
             </div>
-            <div id="conf-text" style="font-weight: 800; font-size: 1.1rem;">Confidence: 0%</div>
 
-            <div id="debug-panel">
-                <div class="debug-title">Neural Network Output Telemetry</div>
-                <div id="debug-content"></div>
-            </div>
-            
-            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-top:30px; text-decoration:underline;">Perform New Scan</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#64748b; margin-top:30px; cursor:pointer; font-weight:600; text-decoration: underline;">PURGE DATA & RESET</button>
         </div>
     </div>
 </div>
@@ -193,110 +196,85 @@
 <script>
 let model = null;
 let labels = [];
-let selectedFile = null;
 
-const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/model.json';
-const METADATA_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/metadata.json';
-
-// Initialize AI
-async function init() {
+async function setup() {
     try {
-        model = await tf.loadLayersModel(MODEL_URL);
-        const res = await fetch(METADATA_URL);
-        const data = await res.json();
-        labels = data.labels;
-        document.getElementById('analyze-btn').innerText = "Analyze Image";
-        console.log("Ready.");
-    } catch (e) {
-        document.getElementById('analyze-btn').innerText = "Error Loading Model";
+        model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/L3ReT1m2a/model.json');
+        const res = await fetch('https://teachablemachine.withgoogle.com/models/L3ReT1m2a/metadata.json');
+        const meta = await res.json();
+        labels = meta.labels;
+        document.getElementById('scan-btn').innerText = "SYSTEM READY";
+    } catch(e) {
+        document.getElementById('scan-btn').innerText = "MODEL ERROR";
     }
 }
-init();
+setup();
 
-// Upload Logic
 document.getElementById("upload-zone").addEventListener("click", () => document.getElementById("file-input").click());
 
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    selectedFile = file;
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if(!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (event) => {
         const preview = document.getElementById('preview-img');
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
-        document.getElementById('drop-text').classList.add('hidden');
-        document.getElementById('upload-zone').classList.add('has-image');
-        document.getElementById('analyze-btn').disabled = false;
-        document.getElementById('result-card').style.display = 'none';
+        preview.src = event.target.result;
+        preview.style.display = 'block';
+        document.getElementById('drop-msg').style.display = 'none';
+        document.getElementById('scan-btn').innerText = "RUN NEURAL SCAN";
+        document.getElementById('scan-btn').disabled = false;
+        document.getElementById('result-panel').style.display = 'none';
     };
     reader.readAsDataURL(file);
 }
 
-// AI Analysis
-async function analyzeImage() {
-    if (!model || !selectedFile) return;
-    
-    const btn = document.getElementById('analyze-btn');
+async function runAnalysis() {
+    const btn = document.getElementById('scan-btn');
     btn.disabled = true;
-    btn.innerText = "Processing...";
+    btn.innerText = "PROCESSING INTERFERENCE...";
 
     const img = document.getElementById('preview-img');
-
-    // Memory-safe analysis
     const scores = tf.tidy(() => {
-        const tensor = tf.browser.fromPixels(img)
-            .resizeBilinear([224, 224])
-            .toFloat()
-            .div(127.5)
-            .sub(1)
-            .expandDims(0);
+        const tensor = tf.browser.fromPixels(img).resizeBilinear([224, 224]).toFloat().div(127.5).sub(1).expandDims(0);
         return model.predict(tensor).dataSync();
     });
 
-    displayResults(Array.from(scores));
-    btn.disabled = false;
-    btn.innerText = "Re-Analyze Image";
+    display(Array.from(scores));
+    btn.innerText = "SCAN COMPLETE";
 }
 
-function displayResults(scores) {
-    const maxIdx = scores.indexOf(Math.max(...scores));
-    const detectedLabel = labels[maxIdx];
-    const confidence = Math.round(scores[maxIdx] * 100);
-
-    // FLIP FIX: Detects '-' as Healthy based on your specific model feedback
-    const isHealthy = detectedLabel.includes('-') || 
-                      detectedLabel.toLowerCase().includes('healthy') ||
-                      detectedLabel.toLowerCase().includes('normal');
-
-    const card = document.getElementById('result-card');
-    const statusBar = document.getElementById('status-bar');
-    const labelEl = document.getElementById('result-label');
-    const subEl = document.getElementById('result-sub');
-    const bar = document.getElementById('conf-bar');
-
-    card.style.display = 'block';
+function display(scores) {
+    const max = scores.indexOf(Math.max(...scores));
+    const label = labels[max];
     
-    // UI Theme Switch
-    statusBar.className = 'result-status-bar ' + (isHealthy ? 'healthy-bg' : 'dr-bg');
-    labelEl.className = 'result-label ' + (isHealthy ? 'healthy-text' : 'dr-text');
-    bar.className = 'conf-fill ' + (isHealthy ? 'healthy-bg' : 'dr-bg');
-    
-    labelEl.innerText = isHealthy ? "Healthy Retina" : "DR Signs Detected";
-    subEl.innerText = isHealthy ? "No clinical signs of diabetic retinopathy were found." : "AI analysis indicates patterns associated with retinopathy.";
-    
-    document.getElementById('conf-text').innerText = `Confidence Score: ${confidence}%`;
-    setTimeout(() => { bar.style.width = confidence + '%'; }, 100);
+    // Logic for your specific +/- labels
+    const isHealthy = label.includes('-') || label.toLowerCase().includes('healthy');
 
-    // Debug Data
-    document.getElementById('debug-content').innerHTML = labels.map((l, i) => `
-        <div class="debug-row">
-            <span>${l}</span>
-            <span>${(scores[i]*100).toFixed(2)}% ${i===maxIdx ? '★' : ''}</span>
+    const panel = document.getElementById('result-panel');
+    const badge = document.getElementById('status-badge');
+    const title = document.getElementById('main-result');
+    const desc = document.getElementById('result-desc');
+    const tel = document.getElementById('telemetry-content');
+
+    panel.style.display = 'block';
+    badge.className = 'status-badge ' + (isHealthy ? 'healthy-theme' : 'dr-theme');
+    badge.innerText = isHealthy ? 'System Clear' : 'Alert: Signs Detected';
+    
+    title.innerText = isHealthy ? 'Healthy Retina' : 'Retinopathy Found';
+    title.style.color = isHealthy ? 'var(--healthy)' : 'var(--warning)';
+    
+    desc.innerText = isHealthy 
+        ? "Neural patterns indicate zero structural irregularities." 
+        : "Automated scan detected microaneurysms or leakage markers.";
+
+    tel.innerHTML = labels.map((l, i) => `
+        <div class="data-row">
+            <span class="data-label">${l}</span>
+            <span class="data-val">${(scores[i]*100).toFixed(2)}%</span>
         </div>
     `).join('');
 
-    card.scrollIntoView({ behavior: 'smooth' });
+    panel.scrollIntoView({ behavior: 'smooth' });
 }
 </script>
 </body>
