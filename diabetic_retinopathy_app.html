@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetinaScan AI - Final Corrected</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <style>
+        :root { --primary: #4a90e2; --healthy: #27ae60; --warning: #e74c3c; --bg: #f4f7f6; --text: #2c3e50; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        nav { background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        #upload-zone { border: 3px dashed #cbd5e0; border-radius: 15px; padding: 40px; text-align: center; background: white; cursor: pointer; transition: 0.2s; }
+        #upload-zone:hover { border-color: var(--primary); background: #f0f7ff; }
+        .hidden { display: none !important; }
+        #preview-img { max-width: 100%; max-height: 300px; border-radius: 10px; margin-top: 15px; }
+        .result-card { margin-top: 30px; padding: 25px; border-radius: 15px; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .result-card.healthy { border-top: 10px solid var(--healthy); }
+        .result-card.dr { border-top: 10px solid var(--warning); }
+        .result-label { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
+        .result-label.healthy { color: var(--healthy); }
+        .result-label.dr { color: var(--warning); }
+        .conf-bar-container { background: #eee; height: 14px; border-radius: 7px; margin: 20px 0; overflow: hidden; }
+        .conf-bar-fill { height: 100%; width: 0%; transition: width 1s ease-out; }
+        .conf-bar-fill.healthy { background: var(--healthy); }
+        .conf-bar-fill.dr { background: var(--warning); }
+        button { background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        #debug-panel { margin-top: 20px; padding: 15px; background: #2c3e50; color: #00ff00; font-family: monospace; font-size: 0.8rem; border-radius: 8px; text-align: left; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<nav><div style="font-size: 1.4rem; font-weight: bold; color: var(--primary);">RetinaScan AI</div></nav>
+
+<div class="container">
+    <h2>Retinal Image Analysis</h2>
+    <div id="upload-zone">
+        <p id="upload-label">Click to upload fundus image</p>
+        <img id="preview-img" class="hidden">
+        <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleFileSelect(event)">
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="analyze-btn" onclick="analyzeImage()" disabled>Loading Model...</button>
+    </div>
+
+    <div id="result-card" class="result-card hidden">
+        <div id="result-label" class="result-label">Result</div>
+        <div id="result-sub">Analysis details...</div>
+        <div class="conf-bar-container"><div id="conf-bar" class="conf-bar-fill"></div></div>
+        <div id="conf-text" style="font-weight: bold;">Confidence: 0%</div>
+
+        <div id="debug-panel">
+            <strong>Internal Logic Stats:</strong>
+            <div id="debug-content"></div>
+        </div>
+        
+        <button onclick="location.reload()" style="background:#888; margin-top:20px; padding:10px 20px; font-size:0.9rem;">New Scan</button>
+    </div>
+</div>
+
+<script>
+let model = null;
+let labels = [];
+let selectedFile = null;
+
+const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/model.json';
+const METADATA_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/metadata.json';
+
+async function init() {
+    try {
+        model = await tf.loadLayersModel(MODEL_URL);
+        const res = await fetch(METADATA_URL);
+        const data = await res.json();
+        labels = data.labels;
+        document.getElementById('analyze-btn').innerText = "Analyze Image";
+        document.getElementById('analyze-btn').disabled = true; // wait for upload
+    } catch (e) { console.error(e); }
+}
+init();
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('preview-img').src = e.target.result;
+        document.getElementById('preview-img').classList.remove('hidden');
+        document.getElementById('upload-label').classList.add('hidden');
+        document.getElementById('analyze-btn').disabled = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById("upload-zone").addEventListener("click", () => document.getElementById("file-input").click());
+
+async function analyzeImage() {
+    const img = document.getElementById('preview-img');
+    const predictions = tf.tidy(() => {
+        const tensor = tf.browser.fromPixels(img).resizeBilinear([224, 224]).toFloat().div(127.5).sub(1).expandDims(0);
+        return model.predict(tensor).dataSync();
+    });
+    displayResults(Array.from(predictions));
+}
+
+function displayResults(scores) {
+    const maxIdx = scores.indexOf(Math.max(...scores));
+    const detectedLabel = labels[maxIdx];
+    const confidence = Math.round(scores[maxIdx] * 100);
+
+    /* FIXED LOGIC FOR YOUR SPECIFIC LABELS (+ DR and - DR)
+       We check for the minus sign (-) or the word "Healthy"
+    */
+    const isHealthy = detectedLabel.includes('-') || 
+                      detectedLabel.toLowerCase().includes('healthy') ||
+                      detectedLabel.toLowerCase().includes('normal');
+
+    const card = document.getElementById('result-card');
+    const labelEl = document.getElementById('result-label');
+    const subEl = document.getElementById('result-sub');
+    const bar = document.getElementById('conf-bar');
+
+    card.classList.remove('hidden');
+    card.className = 'result-card ' + (isHealthy ? 'healthy' : 'dr');
+    labelEl.className = 'result-label ' + (isHealthy ? 'healthy' : 'dr');
+    
+    labelEl.innerText = isHealthy ? "No DR Detected" : "DR Signs Found";
+    subEl.innerText = isHealthy ? "The retina appears healthy." : "Clinical signs of retinopathy were detected.";
+    
+    document.getElementById('conf-text').innerText = `Confidence: ${confidence}%`;
+    bar.className = 'conf-bar-fill ' + (isHealthy ? 'healthy' : 'dr');
+    setTimeout(() => { bar.style.width = confidence + '%'; }, 100);
+
+    // Update Debug to confirm logic
+    document.getElementById('debug-content').innerHTML = labels.map((l, i) => 
+        `<div>${l}: ${(scores[i]*100).toFixed(2)}% ${i===maxIdx ? '<b>(Winner)</b>' : ''}</div>`
+    ).join('') + `<br>Logic: Found <b>${isHealthy ? 'Negative (-)' : 'Positive (+)'}</b> marker.`;
+}
+</script>
+</body>
+</html>
