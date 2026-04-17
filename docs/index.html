@@ -3,60 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RetinaScan AI - Final Corrected</title>
+    <title>RetinaScan AI | Clinical Diagnostic Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --primary: #4a90e2; --healthy: #27ae60; --warning: #e74c3c; --bg: #f4f7f6; --text: #2c3e50; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-        nav { background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
-        #upload-zone { border: 3px dashed #cbd5e0; border-radius: 15px; padding: 40px; text-align: center; background: white; cursor: pointer; transition: 0.2s; }
-        #upload-zone:hover { border-color: var(--primary); background: #f0f7ff; }
-        .hidden { display: none !important; }
-        #preview-img { max-width: 100%; max-height: 300px; border-radius: 10px; margin-top: 15px; }
-        .result-card { margin-top: 30px; padding: 25px; border-radius: 15px; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
-        .result-card.healthy { border-top: 10px solid var(--healthy); }
-        .result-card.dr { border-top: 10px solid var(--warning); }
-        .result-label { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
-        .result-label.healthy { color: var(--healthy); }
-        .result-label.dr { color: var(--warning); }
-        .conf-bar-container { background: #eee; height: 14px; border-radius: 7px; margin: 20px 0; overflow: hidden; }
-        .conf-bar-fill { height: 100%; width: 0%; transition: width 1s ease-out; }
-        .conf-bar-fill.healthy { background: var(--healthy); }
-        .conf-bar-fill.dr { background: var(--warning); }
-        button { background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        #debug-panel { margin-top: 20px; padding: 15px; background: #2c3e50; color: #00ff00; font-family: monospace; font-size: 0.8rem; border-radius: 8px; text-align: left; line-height: 1.5; }
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --healthy: #10b981;
+            --warning: #ef4444;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* --- Modern Navigation --- */
+        nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -1px; }
+        .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* --- Upload Component --- */
+        #upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 24px;
+            padding: 60px 20px;
+            text-align: center;
+            background: var(--card-bg);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        #upload-zone:hover {
+            border-color: var(--primary);
+            background: #f0f7ff;
+            transform: translateY(-2px);
+        }
+
+        #upload-zone.has-image { padding: 20px; border-style: solid; }
+        #preview-img { max-width: 100%; max-height: 350px; border-radius: 16px; margin-top: 10px; }
+
+        /* --- Buttons --- */
+        .btn-group { text-align: center; margin-top: 30px; }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+        /* --- Result Card --- */
+        .result-card {
+            margin-top: 40px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            display: none; /* Controlled by JS */
+        }
+
+        .result-status-bar { height: 10px; width: 100%; }
+        .healthy-bg { background: var(--healthy); }
+        .dr-bg { background: var(--warning); }
+
+        .result-content { padding: 40px; text-align: center; }
+        .result-label { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+        .healthy-text { color: var(--healthy); }
+        .dr-text { color: var(--warning); }
+
+        /* --- Confidence Bar --- */
+        .conf-container { background: #f1f5f9; height: 12px; border-radius: 6px; margin: 25px 0; overflow: hidden; }
+        .conf-fill { height: 100%; width: 0%; transition: width 1s ease-out; }
+
+        /* --- Debug Panel --- */
+        #debug-panel {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        .debug-title { color: #94a3b8; margin-bottom: 12px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
+        .debug-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e293b; color: #38bdf8; }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<nav><div style="font-size: 1.4rem; font-weight: bold; color: var(--primary);">RetinaScan AI</div></nav>
+<nav>
+    <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z"/><path d="M12 16v-4M12 8h.01"/></svg>
+        RetinaScan AI
+    </div>
+</nav>
 
 <div class="container">
-    <h2>Retinal Image Analysis</h2>
+    <header>
+        <h1>Retinal Screening</h1>
+        <p class="subtitle">High-precision automated screening for Diabetic Retinopathy</p>
+    </header>
+
     <div id="upload-zone">
-        <p id="upload-label">Click to upload fundus image</p>
+        <div id="drop-text">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-bottom:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <p style="font-weight:600; margin:0;">Upload Retinal Fundus Image</p>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Tap to browse files</p>
+        </div>
         <img id="preview-img" class="hidden">
         <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleFileSelect(event)">
     </div>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <button id="analyze-btn" onclick="analyzeImage()" disabled>Loading Model...</button>
+    <div class="btn-group">
+        <button id="analyze-btn" class="btn-primary" onclick="analyzeImage()" disabled>Initializing AI...</button>
     </div>
 
-    <div id="result-card" class="result-card hidden">
-        <div id="result-label" class="result-label">Result</div>
-        <div id="result-sub">Analysis details...</div>
-        <div class="conf-bar-container"><div id="conf-bar" class="conf-bar-fill"></div></div>
-        <div id="conf-text" style="font-weight: bold;">Confidence: 0%</div>
+    <div id="result-card" class="result-card">
+        <div id="status-bar" class="result-status-bar"></div>
+        <div class="result-content">
+            <div id="result-label" class="result-label">Result</div>
+            <div id="result-sub" style="color: var(--text-muted);">Details</div>
+            
+            <div class="conf-container">
+                <div id="conf-bar" class="conf-fill"></div>
+            </div>
+            <div id="conf-text" style="font-weight: 800; font-size: 1.1rem;">Confidence: 0%</div>
 
-        <div id="debug-panel">
-            <strong>Internal Logic Stats:</strong>
-            <div id="debug-content"></div>
+            <div id="debug-panel">
+                <div class="debug-title">Neural Network Output Telemetry</div>
+                <div id="debug-content"></div>
+            </div>
+            
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-top:30px; text-decoration:underline;">Perform New Scan</button>
         </div>
-        
-        <button onclick="location.reload()" style="background:#888; margin-top:20px; padding:10px 20px; font-size:0.9rem;">New Scan</button>
     </div>
 </div>
 
@@ -68,6 +198,7 @@ let selectedFile = null;
 const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/model.json';
 const METADATA_URL = 'https://teachablemachine.withgoogle.com/models/L3ReT1m2a/metadata.json';
 
+// Initialize AI
 async function init() {
     try {
         model = await tf.loadLayersModel(MODEL_URL);
@@ -75,10 +206,15 @@ async function init() {
         const data = await res.json();
         labels = data.labels;
         document.getElementById('analyze-btn').innerText = "Analyze Image";
-        document.getElementById('analyze-btn').disabled = true; // wait for upload
-    } catch (e) { console.error(e); }
+        console.log("Ready.");
+    } catch (e) {
+        document.getElementById('analyze-btn').innerText = "Error Loading Model";
+    }
 }
 init();
+
+// Upload Logic
+document.getElementById("upload-zone").addEventListener("click", () => document.getElementById("file-input").click());
 
 function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -86,23 +222,41 @@ function handleFileSelect(event) {
     selectedFile = file;
     const reader = new FileReader();
     reader.onload = (e) => {
-        document.getElementById('preview-img').src = e.target.result;
-        document.getElementById('preview-img').classList.remove('hidden');
-        document.getElementById('upload-label').classList.add('hidden');
+        const preview = document.getElementById('preview-img');
+        preview.src = e.target.result;
+        preview.classList.remove('hidden');
+        document.getElementById('drop-text').classList.add('hidden');
+        document.getElementById('upload-zone').classList.add('has-image');
         document.getElementById('analyze-btn').disabled = false;
+        document.getElementById('result-card').style.display = 'none';
     };
     reader.readAsDataURL(file);
 }
 
-document.getElementById("upload-zone").addEventListener("click", () => document.getElementById("file-input").click());
-
+// AI Analysis
 async function analyzeImage() {
+    if (!model || !selectedFile) return;
+    
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+
     const img = document.getElementById('preview-img');
-    const predictions = tf.tidy(() => {
-        const tensor = tf.browser.fromPixels(img).resizeBilinear([224, 224]).toFloat().div(127.5).sub(1).expandDims(0);
+
+    // Memory-safe analysis
+    const scores = tf.tidy(() => {
+        const tensor = tf.browser.fromPixels(img)
+            .resizeBilinear([224, 224])
+            .toFloat()
+            .div(127.5)
+            .sub(1)
+            .expandDims(0);
         return model.predict(tensor).dataSync();
     });
-    displayResults(Array.from(predictions));
+
+    displayResults(Array.from(scores));
+    btn.disabled = false;
+    btn.innerText = "Re-Analyze Image";
 }
 
 function displayResults(scores) {
@@ -110,33 +264,39 @@ function displayResults(scores) {
     const detectedLabel = labels[maxIdx];
     const confidence = Math.round(scores[maxIdx] * 100);
 
-    /* FIXED LOGIC FOR YOUR SPECIFIC LABELS (+ DR and - DR)
-       We check for the minus sign (-) or the word "Healthy"
-    */
+    // FLIP FIX: Detects '-' as Healthy based on your specific model feedback
     const isHealthy = detectedLabel.includes('-') || 
                       detectedLabel.toLowerCase().includes('healthy') ||
                       detectedLabel.toLowerCase().includes('normal');
 
     const card = document.getElementById('result-card');
+    const statusBar = document.getElementById('status-bar');
     const labelEl = document.getElementById('result-label');
     const subEl = document.getElementById('result-sub');
     const bar = document.getElementById('conf-bar');
 
-    card.classList.remove('hidden');
-    card.className = 'result-card ' + (isHealthy ? 'healthy' : 'dr');
-    labelEl.className = 'result-label ' + (isHealthy ? 'healthy' : 'dr');
+    card.style.display = 'block';
     
-    labelEl.innerText = isHealthy ? "No DR Detected" : "DR Signs Found";
-    subEl.innerText = isHealthy ? "The retina appears healthy." : "Clinical signs of retinopathy were detected.";
+    // UI Theme Switch
+    statusBar.className = 'result-status-bar ' + (isHealthy ? 'healthy-bg' : 'dr-bg');
+    labelEl.className = 'result-label ' + (isHealthy ? 'healthy-text' : 'dr-text');
+    bar.className = 'conf-fill ' + (isHealthy ? 'healthy-bg' : 'dr-bg');
     
-    document.getElementById('conf-text').innerText = `Confidence: ${confidence}%`;
-    bar.className = 'conf-bar-fill ' + (isHealthy ? 'healthy' : 'dr');
+    labelEl.innerText = isHealthy ? "Healthy Retina" : "DR Signs Detected";
+    subEl.innerText = isHealthy ? "No clinical signs of diabetic retinopathy were found." : "AI analysis indicates patterns associated with retinopathy.";
+    
+    document.getElementById('conf-text').innerText = `Confidence Score: ${confidence}%`;
     setTimeout(() => { bar.style.width = confidence + '%'; }, 100);
 
-    // Update Debug to confirm logic
-    document.getElementById('debug-content').innerHTML = labels.map((l, i) => 
-        `<div>${l}: ${(scores[i]*100).toFixed(2)}% ${i===maxIdx ? '<b>(Winner)</b>' : ''}</div>`
-    ).join('') + `<br>Logic: Found <b>${isHealthy ? 'Negative (-)' : 'Positive (+)'}</b> marker.`;
+    // Debug Data
+    document.getElementById('debug-content').innerHTML = labels.map((l, i) => `
+        <div class="debug-row">
+            <span>${l}</span>
+            <span>${(scores[i]*100).toFixed(2)}% ${i===maxIdx ? '★' : ''}</span>
+        </div>
+    `).join('');
+
+    card.scrollIntoView({ behavior: 'smooth' });
 }
 </script>
 </body>
